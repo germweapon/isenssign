@@ -27,6 +27,9 @@ model Account {
   webhookUrls     WebhookUrl[]
   accountConfig   AccountConfig?
   apiTokens       ApiToken[]
+  eventTypes      EventType[]
+  schedules       Schedule[]
+  bookings        Booking[]
 
   @@map("accounts")
 }
@@ -51,6 +54,9 @@ model User {
   submissions      Submission[]
   templateAccesses TemplateAccess[]
   sessions         Session[]
+  eventTypes       EventType[]
+  schedules        Schedule[]
+  bookings         Booking[]
 
   @@map("users")
 }
@@ -344,6 +350,127 @@ model WebhookUrl {
   account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@map("webhook_urls")
+}
+
+// ==========================================
+// Booking & Scheduling
+// ==========================================
+
+model EventType {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String
+  description String?
+  duration    Int      @default(30)  // minutes
+  locations   Json     @default("[]") // [{type: "online"|"in_person"|"phone", value: "..."}]
+  color       String?
+  hidden      Boolean  @default(false)
+  requiresConfirmation Boolean @default(false)
+  minimumNotice Int    @default(60) // minutes before booking
+  bufferBefore Int     @default(0)  // minutes
+  bufferAfter  Int     @default(0)  // minutes
+  slotInterval Int?    // custom slot interval in minutes
+  bookingLimits Json?  // {day?: number, week?: number, month?: number}
+  bookingFields Json   @default("[]") // custom fields for booking form
+  archivedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  accountId  String
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+
+  bookings   Booking[]
+
+  @@unique([userId, slug])
+  @@map("event_types")
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  name      String
+  timeZone  String   @default("Asia/Seoul")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+
+  availabilities Availability[]
+  eventTypes     EventType[]
+
+  @@map("schedules")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  days      Int[]    // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime String   // "09:00" format
+  endTime   String   // "17:00" format
+  date      DateTime? // specific date override (nullable = recurring by days)
+  createdAt DateTime @default(now())
+
+  scheduleId String
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  REJECTED
+  RESCHEDULED
+  NO_SHOW
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  uid         String        @unique @default(cuid())
+  title       String
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus @default(ACCEPTED)
+  location    String?
+  description String?
+  responses   Json          @default("{}") // custom field responses
+  cancellationReason String?
+  rescheduledFromId  String?
+  metadata    Json          @default("{}")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  accountId   String
+  account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  eventTypeId String
+  eventType   EventType  @relation(fields: [eventTypeId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+
+  attendees   BookingAttendee[]
+
+  @@map("bookings")
+}
+
+model BookingAttendee {
+  id       String @id @default(cuid())
+  name     String
+  email    String
+  phone    String?
+  timeZone String @default("Asia/Seoul")
+  locale   String @default("ko")
+
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_attendees")
 }
 
 // ==========================================

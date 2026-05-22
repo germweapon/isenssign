@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardQuickActions } from "./dashboard-quick-actions"
 import { DashboardRecentSubmissions } from "./dashboard-recent-submissions"
+import { DashboardBookingStats } from "./dashboard-booking-stats"
 import { DashboardStats } from "./dashboard-stats"
 
 interface DashboardPageProps {
@@ -18,8 +19,17 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-        {/* Stats cards */}
-        <DashboardStats />
+        {/* Booking stats */}
+        <section>
+          <h2 className="text-lg font-semibold mb-3">{t("bookingStats")}</h2>
+          <DashboardBookingStats />
+        </section>
+
+        {/* Contract stats */}
+        <section>
+          <h2 className="text-lg font-semibold mb-3">{t("contractStats")}</h2>
+          <DashboardStats />
+        </section>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Recent submissions */}

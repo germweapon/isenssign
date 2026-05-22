@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 import {
+  CalendarCheck2,
+  CalendarClock,
+  Clock,
   FileText,
   LayoutDashboard,
   Send,
@@ -23,10 +26,34 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
 }
 
-const navItems: NavItem[] = [
+interface NavGroup {
+  groupLabelKey: string
+  items: NavItem[]
+}
+
+const topLevelItems: NavItem[] = [
   { href: "/", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/templates", labelKey: "templates", icon: FileText },
-  { href: "/submissions", labelKey: "signRequests", icon: Send },
+]
+
+const navGroups: NavGroup[] = [
+  {
+    groupLabelKey: "bookingManagement",
+    items: [
+      { href: "/event-types", labelKey: "eventTypes", icon: CalendarClock },
+      { href: "/bookings", labelKey: "bookings", icon: CalendarCheck2 },
+      { href: "/availability", labelKey: "availability", icon: Clock },
+    ],
+  },
+  {
+    groupLabelKey: "contractManagement",
+    items: [
+      { href: "/templates", labelKey: "templates", icon: FileText },
+      { href: "/submissions", labelKey: "signRequests", icon: Send },
+    ],
+  },
+]
+
+const bottomItems: NavItem[] = [
   { href: "/settings", labelKey: "settings", icon: Settings },
 ]
 
@@ -53,27 +80,85 @@ export function AppSidebar() {
       <Separator />
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {t(item.labelKey)}
-            </Link>
-          )
-        })}
+      <nav className="flex-1 p-3">
+        {/* Top-level items (Dashboard) */}
+        <div className="space-y-1">
+          {topLevelItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {t(item.labelKey)}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Grouped items */}
+        {navGroups.map((group) => (
+          <div key={group.groupLabelKey}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 px-3 pt-4 pb-1">
+              {t(group.groupLabelKey)}
+            </p>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    {t(item.labelKey)}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Bottom items (Settings) */}
+        <div className="space-y-1 pt-4">
+          {bottomItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {t(item.labelKey)}
+              </Link>
+            )
+          })}
+        </div>
       </nav>
 
       <Separator />

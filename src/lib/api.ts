@@ -325,6 +325,272 @@ export async function sendNotification(
 }
 
 // ---------------------------------------------------------------------------
+// Booking - Event Types
+// ---------------------------------------------------------------------------
+
+export interface EventTypeDTO {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  duration: number;
+  locations: unknown;
+  color: string | null;
+  hidden: boolean;
+  requiresConfirmation: boolean;
+  minimumNotice: number;
+  bufferBefore: number;
+  bufferAfter: number;
+  slotInterval: number | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: { id: string; firstName: string | null; email: string } | null;
+  _count: { bookings: number };
+}
+
+export async function fetchEventTypes(params?: {
+  page?: number;
+  limit?: number;
+}): Promise<ApiListResponse<EventTypeDTO>> {
+  const sp = new URLSearchParams();
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.limit) sp.set("limit", String(params.limit));
+  return request<ApiListResponse<EventTypeDTO>>(
+    `${API_BASE}/event-types?${sp.toString()}`
+  );
+}
+
+export async function fetchEventType(
+  id: string
+): Promise<ApiSingleResponse<EventTypeDTO>> {
+  return request<ApiSingleResponse<EventTypeDTO>>(
+    `${API_BASE}/event-types/${id}`
+  );
+}
+
+export async function createEventType(data: {
+  title: string;
+  slug: string;
+  description?: string;
+  duration?: number;
+  locations?: unknown;
+  color?: string;
+  requiresConfirmation?: boolean;
+  minimumNotice?: number;
+  scheduleId?: string;
+}): Promise<ApiSingleResponse<EventTypeDTO>> {
+  return request<ApiSingleResponse<EventTypeDTO>>(`${API_BASE}/event-types`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateEventType(
+  id: string,
+  data: Partial<{
+    title: string;
+    slug: string;
+    description: string;
+    duration: number;
+    locations: unknown;
+    color: string;
+    hidden: boolean;
+    requiresConfirmation: boolean;
+    minimumNotice: number;
+    bufferBefore: number;
+    bufferAfter: number;
+    slotInterval: number;
+    scheduleId: string;
+  }>
+): Promise<ApiSingleResponse<EventTypeDTO>> {
+  return request<ApiSingleResponse<EventTypeDTO>>(
+    `${API_BASE}/event-types/${id}`,
+    { method: "PATCH", body: JSON.stringify(data) }
+  );
+}
+
+export async function deleteEventType(
+  id: string
+): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`${API_BASE}/event-types/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Booking - Schedules
+// ---------------------------------------------------------------------------
+
+export interface AvailabilityDTO {
+  id: string;
+  days: number[];
+  startTime: string;
+  endTime: string;
+  date: string | null;
+}
+
+export interface ScheduleDTO {
+  id: string;
+  name: string;
+  timeZone: string;
+  isDefault: boolean;
+  createdAt: string;
+  availabilities: AvailabilityDTO[];
+}
+
+export async function fetchSchedules(): Promise<{ data: ScheduleDTO[] }> {
+  return request<{ data: ScheduleDTO[] }>(`${API_BASE}/schedules`);
+}
+
+export async function createSchedule(data: {
+  name: string;
+  timeZone?: string;
+  isDefault?: boolean;
+  availabilities?: Array<{
+    days: number[];
+    startTime: string;
+    endTime: string;
+  }>;
+}): Promise<ApiSingleResponse<ScheduleDTO>> {
+  return request<ApiSingleResponse<ScheduleDTO>>(`${API_BASE}/schedules`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateSchedule(
+  id: string,
+  data: Partial<{
+    name: string;
+    timeZone: string;
+    isDefault: boolean;
+    availabilities: Array<{
+      days: number[];
+      startTime: string;
+      endTime: string;
+      date?: string;
+    }>;
+  }>
+): Promise<ApiSingleResponse<ScheduleDTO>> {
+  return request<ApiSingleResponse<ScheduleDTO>>(`${API_BASE}/schedules/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Booking - Bookings
+// ---------------------------------------------------------------------------
+
+export interface BookingAttendeeDTO {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  timeZone: string;
+}
+
+export interface BookingDTO {
+  id: string;
+  uid: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  location: string | null;
+  description: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  eventType: { id: string; title: string; slug: string; duration: number } | null;
+  user: { id: string; firstName: string | null; email: string } | null;
+  attendees: BookingAttendeeDTO[];
+}
+
+export async function fetchBookings(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  period?: "upcoming" | "past" | "today";
+}): Promise<ApiListResponse<BookingDTO>> {
+  const sp = new URLSearchParams();
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.limit) sp.set("limit", String(params.limit));
+  if (params?.status) sp.set("status", params.status);
+  if (params?.period) sp.set("period", params.period);
+  return request<ApiListResponse<BookingDTO>>(
+    `${API_BASE}/bookings?${sp.toString()}`
+  );
+}
+
+export async function fetchBooking(
+  id: string
+): Promise<ApiSingleResponse<BookingDTO>> {
+  return request<ApiSingleResponse<BookingDTO>>(`${API_BASE}/bookings/${id}`);
+}
+
+export async function cancelBooking(
+  id: string,
+  reason?: string
+): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`${API_BASE}/bookings/${id}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Booking - Dashboard Stats
+// ---------------------------------------------------------------------------
+
+export interface BookingStatsDTO {
+  totalBookings: number;
+  upcomingBookings: number;
+  completedBookings: number;
+  todayBookings: number;
+}
+
+export async function fetchBookingStats(): Promise<BookingStatsDTO> {
+  return request<BookingStatsDTO>(`${API_BASE}/bookings/stats`);
+}
+
+// ---------------------------------------------------------------------------
+// Booking - Availability Slots (public)
+// ---------------------------------------------------------------------------
+
+export async function fetchAvailableSlots(params: {
+  eventTypeId: string;
+  date: string; // YYYY-MM-DD
+  timeZone?: string;
+}): Promise<{ slots: string[] }> {
+  const sp = new URLSearchParams({
+    eventTypeId: params.eventTypeId,
+    date: params.date,
+  });
+  if (params.timeZone) sp.set("timeZone", params.timeZone);
+  return request<{ slots: string[] }>(
+    `${API_BASE}/availability?${sp.toString()}`
+  );
+}
+
+export async function createPublicBooking(data: {
+  eventTypeId: string;
+  startTime: string;
+  attendee: {
+    name: string;
+    email: string;
+    phone?: string;
+    timeZone?: string;
+    notes?: string;
+  };
+}): Promise<ApiSingleResponse<BookingDTO>> {
+  return request<ApiSingleResponse<BookingDTO>>(`${API_BASE}/bookings/public`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Verification (Barocert)
 // ---------------------------------------------------------------------------
 
