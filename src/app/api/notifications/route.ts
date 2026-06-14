@@ -1,11 +1,25 @@
 /**
  * Notifications API
+ * GET  /api/notifications - 알림 목록 조회 (현재 미영속화 → 빈 목록 반환)
  * POST /api/notifications - 알림 발송 (이메일 또는 카카오 알림톡)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
 import { sendSigningRequestEmail, sendSigningReminderEmail } from "@/lib/email";
+
+/**
+ * MyCrew 쉘이 계약 앱 알림을 GET으로 폴링한다. 이 라우트에 GET 핸들러가
+ * 없으면 Next.js가 405를 반환하고, 폴러가 6회 재시도 후 앱을 에러 화면으로
+ * 떨어뜨린다. 알림 영속화 모델이 아직 없으므로 빈 목록을 200으로 반환해
+ * 폴링을 정상화한다. (영속화 도입 시 실제 목록 조회로 교체)
+ */
+export async function GET() {
+  const session = await requireAuth();
+  if (session instanceof NextResponse) return session;
+
+  return NextResponse.json({ notifications: [] });
+}
 
 const SendNotificationSchema = z.object({
   type: z.enum(["signing_request", "signing_reminder", "signing_complete"]),
